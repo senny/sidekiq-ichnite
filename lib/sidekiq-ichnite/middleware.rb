@@ -52,7 +52,7 @@ module Sidekiq
 
     class ServerMiddleware
       def call(worker, msg, queue)
-        Ichnite.enter(
+        ::Ichnite.enter(
           job_id: Sidekiq::Ichnite.job_id(msg),
           job_class: Sidekiq::Ichnite.job_class(msg)) do
           begin

@@ -4,7 +4,7 @@ Sidekiq::Logging.logger.level = Logger::WARN
 
 Sidekiq.configure_server do |config|
   # Remove Sidekiqs default backtrace logging
-  unless Rails.env.development?
+  if !defined?(Rails) || Rails.env.production?
     config.error_handlers.delete_if { |h| Sidekiq::ExceptionHandler::Logger === h }
   end
 end

@@ -36,8 +36,8 @@ module Sidekiq
       def call(worker_class, msg, queue, _redis_pool)
         context = {
           queue: queue,
-          job_class: Sidekiq::Ichnite.job_class(msg),
-          job_id: Sidekiq::Ichnite.job_id(msg)
+          job_id: Sidekiq::Ichnite.job_id(msg),
+          job_class: Sidekiq::Ichnite.job_class(msg)
         }
         if at = msg['at']
           context[:scheduled_at] = Time.at(at).utc

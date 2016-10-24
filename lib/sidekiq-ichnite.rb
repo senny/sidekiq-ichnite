@@ -1,4 +1,4 @@
-require_relative 'sidekiq-slog/middleware'
+require_relative 'sidekiq-ichnite/middleware'
 
 Sidekiq::Logging.logger.level = Logger::WARN
 
@@ -11,16 +11,16 @@ end
 
 Sidekiq.configure_client do |config|
   config.client_middleware do |chain|
-    chain.add Sidekiq::Slog::ClientMiddleware
+    chain.add Sidekiq::Ichnite::ClientMiddleware
   end
 end
 
 Sidekiq.configure_server do |config|
   config.client_middleware do |chain|
-    chain.add Sidekiq::Slog::ClientMiddleware
+    chain.add Sidekiq::Ichnite::ClientMiddleware
   end
 
   config.server_middleware do |chain|
-    chain.add Sidekiq::Slog::ServerMiddleware
+    chain.add Sidekiq::Ichnite::ServerMiddleware
   end
 end

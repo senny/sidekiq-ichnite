@@ -1,5 +1,5 @@
 module Sidekiq
-  module Slog
+  module Ichnite
     def self.job_id(msg)
       msg['jid']
     end
@@ -36,15 +36,15 @@ module Sidekiq
       def call(worker_class, msg, queue, _redis_pool)
         context = {
           queue: queue,
-          job_class: Sidekiq::Slog.job_class(msg),
-          job_id: Sidekiq::Slog.job_id(msg)
+          job_class: Sidekiq::Ichnite.job_class(msg),
+          job_id: Sidekiq::Ichnite.job_id(msg)
         }
         if at = msg['at']
           context[:scheduled_at] = Time.at(at).utc
-          SLog.log('job_schedule', context)
+          ::Ichnite.log('job_schedule', context)
         else
-          context[:args] = Sidekiq::Slog.job_args(msg)
-          SLog.log('job_enqueue', context)
+          context[:args] = Sidekiq::Ichnite.job_args(msg)
+          ::Ichnite.log('job_enqueue', context)
         end
         yield
       end
@@ -52,27 +52,27 @@ module Sidekiq
 
     class ServerMiddleware
       def call(worker, msg, queue)
-        Thread.current[:aj_job_id] = Sidekiq::Slog.job_id(msg)
-        Thread.current[:aj_job_class] = Sidekiq::Slog.job_class(msg)
+        Ichnite.enter(
+          job_id: Sidekiq::Ichnite.job_id(msg),
+          job_class: Sidekiq::Ichnite.job_class(msg)) do
+          begin
+            context = { queue: queue }
 
-        context = { queue: queue }
-
-        ts = Time.now.to_f
-        # We are currently not logging start events.
-        # This would most likely blow our SumoLogic limit.
-        # start context, ts
-        yield
-        stop context, msg, ts
-      rescue => ex
-        error context, ex, ts
-        raise ex
-      ensure
-        Thread.current[:aj_job_id] = nil
-        Thread.current[:aj_job_class] = nil
+            ts = Time.now.to_f
+            # We are currently not logging start events.
+            # This would most likely blow our SumoLogic limit.
+            # start context, ts
+            yield
+            stop context, msg, ts
+          rescue => ex
+            error context, ex, ts
+            raise ex
+          end
+        end
       end
 
       def start(context, _time)
-        SLog.log('job_start', context)
+        ::Ichnite.log('job_start', context)
       end
 
       def error(context, error, start)
@@ -81,7 +81,7 @@ module Sidekiq
           duration: duration_ms(start),
           error: error.class.name,
           message: error.message[/\A.+$/].inspect)
-        SLog.log('job_error', data)
+        ::Ichnite.log('job_error', data)
       end
 
       def stop(context, _msg, start)
@@ -91,7 +91,7 @@ module Sidekiq
           # queued_duration: duration_ms(msg['enqueued_at'], start),
                              duration: duration_ms(start))
 
-        SLog.log('job_stop', data)
+        ::Ichnite.log('job_stop', data)
       end
 
       def duration_ms(from, to = Time.now.to_f)

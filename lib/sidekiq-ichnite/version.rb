@@ -1,5 +1,5 @@
 module Sidekiq
-  module Slog
+  module Ichnite
     VERSION = "0.0.3"
   end
 end

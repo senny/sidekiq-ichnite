@@ -1,3 +1,4 @@
+require 'ichnite'
 require_relative 'sidekiq-ichnite/middleware'
 
 Sidekiq::Logging.logger.level = Logger::WARN

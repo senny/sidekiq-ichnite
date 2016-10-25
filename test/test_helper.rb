@@ -1,8 +1,7 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'sidekiq'
-require 'ichnite'
-require 'ichnite/testing'
 require 'sidekiq-ichnite'
+require 'ichnite/testing'
 require 'sidekiq/testing'
 
 require 'minitest/autorun'

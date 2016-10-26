@@ -65,7 +65,7 @@ module Sidekiq
             yield
             stop context, msg, ts
           rescue => ex
-            error context, ex, ts
+            error context, msg, ex, ts
             raise ex
           end
         end
@@ -75,23 +75,28 @@ module Sidekiq
         ::Ichnite.log('job_start', context)
       end
 
-      def error(context, error, start)
-        data = context.merge(
+      def error(context, msg, error, start)
+        data = context.merge(job_timing(msg, start))
+        data.merge!(
           at: :error,
-          duration: duration_ms(start),
           error: error.class.name,
           message: error.message[/\A.+$/].inspect)
         ::Ichnite.log('job_error', data)
       end
 
-      def stop(context, _msg, start)
-        data = context.merge(
-          # It looks like this number is subject to clock drift.
-                             # TODO: Figure out a way to make this accurate.
-          # queued_duration: duration_ms(msg['enqueued_at'], start),
-                             duration: duration_ms(start))
-
+      def stop(context, msg, start)
+        data = context.merge(job_timing(msg, start))
         ::Ichnite.log('job_stop', data)
+      end
+
+      def job_timing(msg, start)
+        # with clock drift this number can become negative.
+        # Let's take 0 in this case.
+        queued_duration = [0, duration_ms(msg['enqueued_at'], start)].max
+        {
+          queued_for: queued_duration / 1000,
+          duration: duration_ms(start)
+        }
       end
 
       def duration_ms(from, to = Time.now.to_f)
